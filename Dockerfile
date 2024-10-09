@@ -1,18 +1,15 @@
-FROM webdevops/go-crond:master-ubuntu
-LABEL maintainer="AriaieBOY <smr.seddighy@gmail.com>"
+FROM webdevops/go-crond:main-ubuntu
+LABEL maintainer="Jdavid77 <johnynobrega17@gmail.com>"
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ=UTC
 
-RUN apt-get update
-RUN apt-get -y install wget gnupg
-RUN sh -c 'echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
-
-RUN wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
-
-RUN apt-get update
-RUN apt-get -yq install openssl awscli postgresql-client-17
-
-RUN rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get update && \
+    apt-get -y install wget gnupg && \
+    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
+    echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
+    apt-get update && \
+    apt-get -yq install openssl awscli postgresql-client-17 && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 ENV POSTGRES_DATABASE **None**
 ENV POSTGRES_BACKUP_ALL **None**
