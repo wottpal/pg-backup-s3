@@ -61,7 +61,7 @@ else
 fi
 
 if [ "${POSTGRES_BACKUP_ALL}" = "true" ]; then
-  SRC_FILE=dump.sql.gz
+  SRC_FILE=/tmp/dump.sql.gz
   DEST_FILE=all_$(date +"%Y-%m-%dT%H:%M:%SZ").sql.gz
 
   echo "Creating dump of all databases from ${POSTGRES_HOST}..."
