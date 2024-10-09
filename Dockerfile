@@ -1,4 +1,4 @@
-FROM webdevops/go-crond:main-alpine
+FROM alpine:3.20.3
 LABEL maintainer="Jdavid77 <johnynobrega17@gmail.com>"
 ENV DEBIAN_FRONTEND noninteractive
 
