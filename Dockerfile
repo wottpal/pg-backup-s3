@@ -7,7 +7,6 @@ RUN apk --no-cache add \
         ca-certificates \
         openssl \
         postgresql-client \
-        unzip \
         bash \
         aws-cli
 
