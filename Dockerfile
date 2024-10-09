@@ -1,15 +1,15 @@
-FROM webdevops/go-crond:main-ubuntu
+FROM webdevops/go-crond:main-alpine
 LABEL maintainer="Jdavid77 <johnynobrega17@gmail.com>"
 ENV DEBIAN_FRONTEND noninteractive
-ENV TZ=UTC
 
-RUN apt-get update && \
-    apt-get -y install wget gnupg && \
-    wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add - && \
-    echo "deb http://apt.postgresql.org/pub/repos/apt jammy-pgdg main" > /etc/apt/sources.list.d/pgdg.list && \
-    apt-get update && \
-    apt-get -yq install openssl awscli postgresql-client-17 && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apk --no-cache add \
+        curl \
+        ca-certificates \
+        openssl \
+        postgresql-client \
+        unzip \
+        bash \
+        aws-cli
 
 ENV POSTGRES_DATABASE **None**
 ENV POSTGRES_BACKUP_ALL **None**
