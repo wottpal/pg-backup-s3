@@ -15,7 +15,7 @@ if [ "${S3_BUCKET}" = "**None**" ]; then
   exit 1
 fi
 
-if [ "${POSTGRES_DATABASE}" = "**None**" -a "${POSTGRES_BACKUP_ALL}" != "true" ]; then
+if [ "${POSTGRES_DATABASE}" = "**None**" ] && [ "${POSTGRES_BACKUP_ALL}" != "true" ]; then
   echo "You need to set the POSTGRES_DATABASE environment variable."
   exit 1
 fi
@@ -40,7 +40,7 @@ if [ "${POSTGRES_PASSWORD}" = "**None**" ]; then
   exit 1
 fi
 
-if [ "${S3_ENDPOINT}" == "**None**" ]; then
+if [ "${S3_ENDPOINT}" = "**None**" ]; then
   AWS_ARGS=""
 else
   AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
@@ -60,7 +60,7 @@ else
   S3_PREFIX="/${S3_PREFIX}/"
 fi
 
-if [ "${POSTGRES_BACKUP_ALL}" == "true" ]; then
+if [ "${POSTGRES_BACKUP_ALL}" = "true" ]; then
   SRC_FILE=dump.sql.gz
   DEST_FILE=all_$(date +"%Y-%m-%dT%H:%M:%SZ").sql.gz
 
