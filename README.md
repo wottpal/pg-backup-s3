@@ -1,13 +1,9 @@
 # pg-backup-s3
 a docker image to back up Postgres into the S3-compatible storage
 
-this repo is based on [schickling/dockerfiles](https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3).
+this repo is a fork of [ariaieboy/pg-backup-s3](https://github.com/ariaieboy/pg-backup-s3). Full credit to the authors
 
-the difference here is that we use Ubuntu as a base image and because of that we can add an official repository of Postgresql and get a more updated version of Postgresql.
-
-this image currently uses `postgresql-client-17` that supports versions 12-17 of PostgreSQL.
-
-if you need older Postgresql you need to manually change the docker file and build the image with the compatible client.
+Some issues in the `backup.sh` file were fixed in order to make sure that it is possible to backup all databases
 
 ## Usage
 
@@ -25,7 +21,7 @@ postgres:
     POSTGRES_PASSWORD: password
 
 pgbackups3:
-  image: ariaieboy/pg-backup-s3
+  image: ghcr.io/jdavid77/pg-backup-s3:main
   depends_on:
     - postgres
   links:
