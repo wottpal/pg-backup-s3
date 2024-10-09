@@ -1,6 +1,9 @@
 FROM alpine:3.20.3
 LABEL maintainer="Jdavid77 <johnynobrega17@gmail.com>"
-ENV DEBIAN_FRONTEND noninteractive
+
+ARG UID=1001
+ARG GID=1001
+ARG USER=nonroot
 
 RUN apk --no-cache add \
         curl \
@@ -9,6 +12,10 @@ RUN apk --no-cache add \
         postgresql-client \
         bash \
         aws-cli
+
+RUN addgroup -g $GID -S ${USER} && \
+    adduser -u $UID -S ${USER} -G ${USER}
+
 
 ENV POSTGRES_DATABASE **None**
 ENV POSTGRES_BACKUP_ALL **None**
@@ -28,9 +35,11 @@ ENV SCHEDULE **None**
 ENV ENCRYPTION_PASSWORD **None**
 ENV REMOVE_BEFORE ''
 
-ADD run.sh /scripts/run.sh
-ADD backup.sh /scripts/backup.sh
+COPY --chown=${UID}:${GID} run.sh /scripts/run.sh
+COPY --chown=${UID}:${GID} backup.sh /scripts/backup.sh
+RUN chmod 700 /scripts/run.sh /scripts/backup.sh
 
+USER ${USER}
 
 ENTRYPOINT []
 CMD ["sh", "/scripts/run.sh"]
