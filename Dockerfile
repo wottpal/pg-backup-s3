@@ -12,6 +12,7 @@ RUN apk --no-cache add \
         postgresql-client-17 \
         bash \
         aws-cli
+        
 
 RUN addgroup -g $GID -S ${USER} && \
     adduser -u $UID -S ${USER} -G ${USER}
