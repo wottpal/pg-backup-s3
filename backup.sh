@@ -94,7 +94,7 @@ if [ "${POSTGRES_BACKUP_ALL}" = "true" ]; then
 
   echo "Uploading dump to $S3_BUCKET"
   if [ -z "$S3_PREFIX" ]; then
-    cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+    cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
   else
     cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
   fi
@@ -127,7 +127,7 @@ else
 
     echo "Uploading dump to $S3_BUCKET"
     if [ -z "$S3_PREFIX" ]; then
-      cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+      cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
     else
       cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
     fi
@@ -142,24 +142,30 @@ if [ -n "$REMOVE_BEFORE" ]; then
   backups_query="Contents[?LastModified<='${date_from_remove} 00:00:00'].{Key: Key}"
 
   echo "Removing old backups from $S3_BUCKET (older than ${date_from_remove})..."
+  
+  # First, check if there are any objects to remove
   if [ -z "$S3_PREFIX" ]; then
         # No prefix - list all objects in bucket
-        aws s3api list-objects \
+        old_backups=$(aws s3api list-objects \
           --bucket "${S3_BUCKET}" \
           --query "${backups_query}" \
           --output text \
-          $S3_ENDPOINT_ARG \
-          | xargs -n1 -t -I 'KEY' aws s3 rm s3://${S3_BUCKET}/KEY $S3_ENDPOINT_ARG
+          $S3_ENDPOINT_ARG 2>/dev/null || echo "")
   else
         # Use prefix to limit scope
-        aws s3api list-objects \
+        old_backups=$(aws s3api list-objects \
           --bucket "${S3_BUCKET}" \
           --prefix "${S3_PREFIX}" \
           --query "${backups_query}" \
           --output text \
-          $S3_ENDPOINT_ARG \
-          | xargs -n1 -t -I 'KEY' aws s3 rm s3://${S3_BUCKET}/KEY $S3_ENDPOINT_ARG
+          $S3_ENDPOINT_ARG 2>/dev/null || echo "")
   fi
-
-  echo "Removal complete."
+  
+  if [ -n "$old_backups" ] && [ "$old_backups" != "None" ]; then
+    echo "Found old backups to remove..."
+    echo "$old_backups" | xargs -n1 -t -I 'KEY' aws s3 rm s3://${S3_BUCKET}/KEY $S3_ENDPOINT_ARG
+    echo "Removal complete."
+  else
+    echo "No old backups found to remove."
+  fi
 fi
