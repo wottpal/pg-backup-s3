@@ -169,3 +169,6 @@ if [ -n "$REMOVE_BEFORE" ]; then
     echo "No old backups found to remove."
   fi
 fi
+
+echo "Backup process completed successfully"
+exit 0
