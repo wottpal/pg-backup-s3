@@ -40,16 +40,28 @@ if [ "${POSTGRES_PASSWORD}" = "**None**" ]; then
   exit 1
 fi
 
-if [ "${S3_ENDPOINT}" = "**None**" ]; then
-  AWS_ARGS=""
-else
-  AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
+# Validate S3_REGION
+if [ "${S3_REGION}" = "**None**" ] || [ -z "${S3_REGION}" ]; then
+  echo "You need to set the S3_REGION environment variable."
+  exit 1
 fi
 
 # env vars needed for aws tools
 export AWS_ACCESS_KEY_ID=$S3_ACCESS_KEY_ID
 export AWS_SECRET_ACCESS_KEY=$S3_SECRET_ACCESS_KEY
 export AWS_DEFAULT_REGION=$S3_REGION
+
+# Validate AWS credentials are properly set
+if [ -z "${AWS_ACCESS_KEY_ID}" ] || [ -z "${AWS_SECRET_ACCESS_KEY}" ] || [ -z "${AWS_DEFAULT_REGION}" ]; then
+  echo "AWS credentials not properly configured."
+  exit 1
+fi
+
+if [ "${S3_ENDPOINT}" = "**None**" ]; then
+  AWS_ARGS=""
+else
+  AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
+fi
 
 export PGPASSWORD=$POSTGRES_PASSWORD
 POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
