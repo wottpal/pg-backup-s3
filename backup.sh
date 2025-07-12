@@ -90,7 +90,7 @@ else
   do
     IFS="$OIFS"
 
-    SRC_FILE=dump.sql.gz
+    SRC_FILE=/tmp/dump.sql.gz
     DEST_FILE=${DB}_$(date +"%Y-%m-%dT%H:%M:%SZ").sql.gz
 
     echo "Creating dump of ${DB} database from ${POSTGRES_HOST}..."
