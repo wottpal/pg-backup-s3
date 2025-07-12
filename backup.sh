@@ -57,10 +57,11 @@ if [ -z "${AWS_ACCESS_KEY_ID}" ] || [ -z "${AWS_SECRET_ACCESS_KEY}" ] || [ -z "$
   exit 1
 fi
 
+# Set S3 endpoint args for proper command syntax
 if [ "${S3_ENDPOINT}" = "**None**" ]; then
-  AWS_ARGS=""
+  S3_ENDPOINT_ARG=""
 else
-  AWS_ARGS="--endpoint-url ${S3_ENDPOINT}"
+  S3_ENDPOINT_ARG="--endpoint-url ${S3_ENDPOINT}"
 fi
 
 export PGPASSWORD=$POSTGRES_PASSWORD
@@ -91,7 +92,7 @@ if [ "${POSTGRES_BACKUP_ALL}" = "true" ]; then
   fi
 
   echo "Uploading dump to $S3_BUCKET"
-  cat $SRC_FILE | aws $AWS_ARGS s3 cp - "s3://${S3_BUCKET}${S3_PREFIX}${DEST_FILE}" || exit 2
+  cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
 
   echo "SQL backup uploaded successfully"
   rm -rf $SRC_FILE
@@ -120,7 +121,7 @@ else
     fi
 
     echo "Uploading dump to $S3_BUCKET"
-    cat $SRC_FILE | aws $AWS_ARGS s3 cp - "s3://${S3_BUCKET}${S3_PREFIX}${DEST_FILE}" || exit 2
+    cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
 
     echo "SQL backup uploaded successfully"
     rm -rf $SRC_FILE
@@ -132,18 +133,20 @@ if [ -n "$REMOVE_BEFORE" ]; then
 
   echo "Removing old backups from $S3_BUCKET..."
   if [ $S3_PREFIX = '/' ]; then
-        aws $AWS_ARGS s3api list-objects \
+        aws s3api list-objects \
           --bucket "${S3_BUCKET}" \
           --query "${backups_query}" \
           --output text \
-          | xargs -n1 -t -I 'KEY' aws $AWS_ARGS s3 rm s3://"${S3_BUCKET}"/'KEY'
+          $S3_ENDPOINT_ARG \
+          | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
           else
-            aws $AWS_ARGS s3api list-objects \
+            aws s3api list-objects \
               --bucket "${S3_BUCKET}" \
               --prefix "${S3_PREFIX}" \
               --query "${backups_query}" \
               --output text \
-              | xargs -n1 -t -I 'KEY' aws $AWS_ARGS s3 rm s3://"${S3_BUCKET}"/'KEY'
+              $S3_ENDPOINT_ARG \
+              | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
   fi
 
   echo "Removal complete."
