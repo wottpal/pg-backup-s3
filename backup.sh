@@ -128,25 +128,28 @@ else
   done
 fi
 if [ -n "$REMOVE_BEFORE" ]; then
-  date_from_remove=$(date -r $(( $(date +%s) - $REMOVE_BEFORE * 86400 )) +%Y-%m-%d)
+  # Calculate the cutoff date (using coreutils date command)
+  date_from_remove=$(date -d "${REMOVE_BEFORE} days ago" +%Y-%m-%d)
   backups_query="Contents[?LastModified<='${date_from_remove} 00:00:00'].{Key: Key}"
 
-  echo "Removing old backups from $S3_BUCKET..."
-  if [ $S3_PREFIX = '/' ]; then
+  echo "Removing old backups from $S3_BUCKET (older than ${date_from_remove})..."
+  if [ "$S3_PREFIX" = "/" ]; then
+        # No prefix - list all objects in bucket
         aws s3api list-objects \
           --bucket "${S3_BUCKET}" \
           --query "${backups_query}" \
           --output text \
           $S3_ENDPOINT_ARG \
           | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
-          else
-            aws s3api list-objects \
-              --bucket "${S3_BUCKET}" \
-              --prefix "${S3_PREFIX}" \
-              --query "${backups_query}" \
-              --output text \
-              $S3_ENDPOINT_ARG \
-              | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
+  else
+        # Use prefix to limit scope
+        aws s3api list-objects \
+          --bucket "${S3_BUCKET}" \
+          --prefix "${S3_PREFIX#/}" \
+          --query "${backups_query}" \
+          --output text \
+          $S3_ENDPOINT_ARG \
+          | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
   fi
 
   echo "Removal complete."

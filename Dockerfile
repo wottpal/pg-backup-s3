@@ -10,7 +10,8 @@ RUN apk --no-cache add \
         openssl \
         postgresql17-client \
         bash \
-        aws-cli
+        aws-cli \
+        coreutils
 
 
 RUN addgroup -g $GID -S ${USER} && \
