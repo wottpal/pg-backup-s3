@@ -67,10 +67,11 @@ fi
 export PGPASSWORD=$POSTGRES_PASSWORD
 POSTGRES_HOST_OPTS="-h $POSTGRES_HOST -p $POSTGRES_PORT -U $POSTGRES_USER $POSTGRES_EXTRA_OPTS"
 
+# Construct S3 prefix correctly - no leading/trailing slashes issues
 if [ -z ${S3_PREFIX+x} ]; then
-  S3_PREFIX="/"
+  S3_PREFIX=""
 else
-  S3_PREFIX="/${S3_PREFIX}/"
+  S3_PREFIX="${S3_PREFIX%/}/"  # Remove trailing slash if present, then add one
 fi
 
 if [ "${POSTGRES_BACKUP_ALL}" = "true" ]; then
@@ -92,7 +93,11 @@ if [ "${POSTGRES_BACKUP_ALL}" = "true" ]; then
   fi
 
   echo "Uploading dump to $S3_BUCKET"
-  cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+  if [ -z "$S3_PREFIX" ]; then
+    cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+  else
+    cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+  fi
 
   echo "SQL backup uploaded successfully"
   rm -rf $SRC_FILE
@@ -121,7 +126,11 @@ else
     fi
 
     echo "Uploading dump to $S3_BUCKET"
-    cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+    if [ -z "$S3_PREFIX" ]; then
+      cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+    else
+      cat $SRC_FILE | aws s3 cp - "s3://${S3_BUCKET}/${S3_PREFIX}${DEST_FILE}" $S3_ENDPOINT_ARG || exit 2
+    fi
 
     echo "SQL backup uploaded successfully"
     rm -rf $SRC_FILE
@@ -133,23 +142,23 @@ if [ -n "$REMOVE_BEFORE" ]; then
   backups_query="Contents[?LastModified<='${date_from_remove} 00:00:00'].{Key: Key}"
 
   echo "Removing old backups from $S3_BUCKET (older than ${date_from_remove})..."
-  if [ "$S3_PREFIX" = "/" ]; then
+  if [ -z "$S3_PREFIX" ]; then
         # No prefix - list all objects in bucket
         aws s3api list-objects \
           --bucket "${S3_BUCKET}" \
           --query "${backups_query}" \
           --output text \
           $S3_ENDPOINT_ARG \
-          | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
+          | xargs -n1 -t -I 'KEY' aws s3 rm s3://${S3_BUCKET}/KEY $S3_ENDPOINT_ARG
   else
         # Use prefix to limit scope
         aws s3api list-objects \
           --bucket "${S3_BUCKET}" \
-          --prefix "${S3_PREFIX#/}" \
+          --prefix "${S3_PREFIX}" \
           --query "${backups_query}" \
           --output text \
           $S3_ENDPOINT_ARG \
-          | xargs -n1 -t -I 'KEY' aws s3 rm s3://"${S3_BUCKET}"/'KEY' $S3_ENDPOINT_ARG
+          | xargs -n1 -t -I 'KEY' aws s3 rm s3://${S3_BUCKET}/KEY $S3_ENDPOINT_ARG
   fi
 
   echo "Removal complete."
