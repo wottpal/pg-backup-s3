@@ -40,7 +40,8 @@ COPY --chown=${UID}:${GID} run.sh /scripts/run.sh
 COPY --chown=${UID}:${GID} backup.sh /scripts/backup.sh
 RUN chmod 700 /scripts/run.sh /scripts/backup.sh
 
-USER ${USER}
+# Run as root to allow cron to work properly
+# USER ${USER}
 
 ENTRYPOINT []
 CMD ["sh", "/scripts/run.sh"]
