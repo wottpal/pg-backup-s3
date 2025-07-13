@@ -1,7 +1,12 @@
 services:
   pgbackups3:
     image: "ghcr.io/wottpal/pg-backup-s3:main"
-    restart: on-failure
+    # To not start anything but run the ./backup.sh via Coolify-managed cron
+    command: "tail -f /dev/null"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    # Environment variables are set via Coolify as well
     environment:
       - "REMOVE_BEFORE=${REMOVE_BEFORE}"
       - "SCHEDULE=${SCHEDULE}"

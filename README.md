@@ -1,9 +1,7 @@
 # pg-backup-s3
-a docker image to back up Postgres into the S3-compatible storage
+A docker image to back up Postgres into the S3-compatible storage.
 
-this repo is a fork of [ariaieboy/pg-backup-s3](https://github.com/ariaieboy/pg-backup-s3). Full credit to the authors
-
-Some issues in the `backup.sh` file were fixed in order to make sure that it is possible to backup all databases
+This repo is a fork of [Jdavid77/pg-backup-s3](https://github.com/Jdavid77/pg-backup-s3/blob/main/Dockerfile) which itself is a fork of [ariaieboy/pg-backup-s3](https://github.com/ariaieboy/pg-backup-s3). Full credit to the authors.
 
 ## Usage
 
@@ -27,19 +25,19 @@ pgbackups3:
   links:
     - postgres
   environment:
-    REMOVE_BEFORE: 30 //optional
-    SCHEDULE: '@daily'
-    S3_REGION: region
+    REMOVE_BEFORE: 30 # optional, to auto-delete backups older than 30 days
+    SCHEDULE: '@daily' # leave blank or provide "**None**" to disable automatic backups
+    S3_REGION: region # use "auto" to automatically detect the region
     S3_ACCESS_KEY_ID: key
     S3_SECRET_ACCESS_KEY: secret
     S3_BUCKET: my-bucket
     S3_PREFIX: backup
-    POSTGRES_BACKUP_ALL: "false"
+    POSTGRES_BACKUP_ALL: "false" # set to "true" to backup all databases
     POSTGRES_HOST: host
     POSTGRES_DATABASE: dbname
     POSTGRES_USER: user
     POSTGRES_PASSWORD: password
-    POSTGRES_EXTRA_OPTS: '--schema=public --blobs'
+    POSTGRES_EXTRA_OPTS: '--schema=public --blobs' # remove '--schema=public' if you want to backup all schemas
 ```
 
 ### Automatic Periodic Backups
@@ -69,3 +67,43 @@ You can remove old backups by setting the `REMOVE_BEFORE` environment for exampl
 ### Encryption
 
 You can additionally set the `ENCRYPTION_PASSWORD` environment variable like `-e ENCRYPTION_PASSWORD="superstrongpassword"` to encrypt the backup. It can be decrypted using `openssl aes-256-cbc -d -in backup.sql.gz.enc -out backup.sql.gz`.
+
+
+## Testing the Database Locally
+
+### Quick Local Testing with Docker
+
+1. **Start PostgreSQL 17 container**
+```bash
+docker run --name temp-postgres \
+  -e POSTGRES_PASSWORD=password \
+  -e POSTGRES_DB=testdb \
+  -d -p 5432:5432 \
+  postgres:17
+```
+
+2. **Download the database dump from S3**
+
+3. **Restore your database from the dump**
+```bash
+gunzip -c your_dump.sql.gz | docker exec -i temp-postgres psql -U postgres -d testdb
+```
+
+1. **Connect and explore**
+```bash
+# Via command line
+docker exec -it temp-postgres psql -U postgres -d testdb
+
+# Or use any PostgreSQL GUI with these connection details:
+# Host: localhost
+# Port: 5432
+# Database: testdb
+# Username: postgres
+# Password: password
+```
+
+2. **Clean up when finished**
+```bash
+docker stop temp-postgres && docker rm temp-postgres
+```
+
